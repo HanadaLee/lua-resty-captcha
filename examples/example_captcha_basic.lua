@@ -1,25 +1,14 @@
-#!/usr/bin/env lua5.1
+#!/usr/bin/env lua
 
--- Copyright mrDoctorWho <mrdoctorwho@gmail.com>
--- Published under the MIT license
+-- Basic captcha example
 
-package.path = package.path..";../src/?.lua"
+package.path = package.path .. ";../lib/?.lua"
 
-local captcha = require 'captcha'
-
-local filename = "captcha1.jpg"
-
--- Create the captcha object
+local captcha = require("resty.captcha")
 local cap = captcha.new()
--- Set font (required)
-cap:font("./Vera.ttf")
--- Optional call, allows you to get the captcha text instead of writing the image to a file
-cap:generate()
--- Write the generated captcha to file named out1.jpg with quality percentage 70
--- If generate() wasn't called, captcha will be generated automatically
--- Firt param is the filename, second is the image quality percentage
-cap:write(filename, 70)
 
-print("Captcha text " .. cap:getStr() .. "\n")
-io.write("Captcha data ----\n" .. cap:jpegStr(70) .. "\n----\n")
-print("Captcha has been written to "..filename .. "\n")
+cap:font("./Vera.ttf")
+cap:write("captcha_basic.jpg", 70)
+
+print("Captcha text: " .. cap:getStr())
+print("Captcha written to captcha_basic.jpg")

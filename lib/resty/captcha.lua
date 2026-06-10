@@ -1,0 +1,233 @@
+-- Copyright startx <startx@plentyfact.org>
+-- Modifications copyright mrDoctorWho <mrdoctorwho@gmail.com>
+-- Modifications copyright Hanada <im@hanada.info>
+-- Published under the MIT license
+
+local _M = {}
+
+-- replaced with lua-resty-gd
+local gd = require("resty.gd")
+local math = math
+local string = string
+local table = table
+local io = io
+
+local mt = { __index = {} }
+
+
+local function get_seed_from_urandom()
+    local frandom, err = io.open("/dev/urandom", "rb")
+    if not frandom then
+        return nil, "failed to open /dev/urandom: " .. tostring(err)
+    end
+
+    local str = frandom:read(8)
+    frandom:close()
+    if not str then
+        return nil, "failed to read data from /dev/urandom"
+    end
+
+    local seed = 0
+    for i = 1, 8 do
+        seed = 256 * seed + string.byte(str, i)
+    end
+
+    return seed
+end
+
+
+-- Seed random number generator
+do
+    local seed = get_seed_from_urandom()
+    if not seed then
+        seed = os.time()
+    end
+    math.randomseed(seed)
+end
+
+
+function _M.new()
+    local cap = {}
+    local f = setmetatable({ cap = cap }, mt)
+    return f
+end
+
+
+local function random_char(length, alphabet)
+    local captcha_t = {}
+
+    for _ = 1, length do
+        local i = math.random(1, string.len(alphabet))
+        table.insert(captcha_t, string.sub(alphabet, i, i))
+    end
+
+    return captcha_t
+end
+
+
+local function random_angle()
+    return math.random(-20, 40)
+end
+
+
+local function scribble(w, h)
+    local x1 = math.random(5, w - 5)
+    local x2 = math.random(5, w - 5)
+    return x1, x2
+end
+
+
+function mt.__index:string(s)
+    self.cap.string = s
+end
+
+
+function mt.__index:scribble(n)
+    self.cap.scribble = n or 20
+end
+
+
+function mt.__index:alphabet(s)
+    self.cap.alphabet = s
+end
+
+
+function mt.__index:length(l)
+    self.cap.length = l
+end
+
+
+function mt.__index:bgcolor(r, g, b)
+    self.cap.bgcolor = { r = r, g = g, b = b }
+end
+
+
+function mt.__index:fgcolor(r, g, b)
+    self.cap.fgcolor = { r = r, g = g, b = b }
+end
+
+
+function mt.__index:line(line)
+    self.cap.line = line
+end
+
+
+function mt.__index:font(font)
+    self.cap.font = font
+end
+
+
+function mt.__index:generate()
+    --local self.captcha = {}
+    local captcha_t = {}
+
+    if not self.cap.string then
+        if not self.cap.length then
+            self.cap.length = 6
+        end
+        if not self.cap.alphabet or self.cap.alphabet == "" then
+            -- Fallback alphabet if not provided
+            self.cap.alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        end
+        captcha_t = random_char(self.cap.length, self.cap.alphabet)
+        self:string(table.concat(captcha_t))
+    else
+        for i = 1, #self.cap.string do
+            table.insert(captcha_t, string.sub(self.cap.string, i, i))
+        end
+    end
+
+    if self.im then
+        self.im:destroy()
+    end
+    self.im = gd.createTrueColor(#captcha_t * 40, 45)
+    local black = self.im:colorAllocate(0, 0, 0)
+    local white = self.im:colorAllocate(255, 255, 255)
+    local bgcolor
+    if not self.cap.bgcolor then
+        bgcolor = white
+    else
+        bgcolor = self.im:colorAllocate(self.cap.bgcolor.r, self.cap.bgcolor.g, self.cap.bgcolor.b)
+    end
+
+    local fgcolor
+    if not self.cap.fgcolor then
+        fgcolor = black
+    else
+        fgcolor = self.im:colorAllocate(self.cap.fgcolor.r, self.cap.fgcolor.g, self.cap.fgcolor.b)
+    end
+
+    self.im:filledRectangle(0, 0, #captcha_t * 40, 45, bgcolor)
+
+    local offset_left = 10
+
+    for i = 1, #captcha_t do
+        local angle = random_angle()
+        local llx, lly, lrx, lry, urx, ury, ulx, uly =
+			self.im:stringFT(fgcolor, self.cap.font, 25, math.rad(angle),
+			                 offset_left, 35, captcha_t[i])
+        self.im:polygon({ { llx, lly }, { lrx, lry }, { urx, ury }, { ulx, uly } }, bgcolor)
+        offset_left = offset_left + 40
+    end
+
+    if self.cap.line then
+        self.im:line(10, 10, (#captcha_t * 40) - 10, 40, fgcolor)
+        self.im:line(11, 11, (#captcha_t * 40) - 11, 41, fgcolor)
+        self.im:line(12, 12, (#captcha_t * 40) - 12, 42, fgcolor)
+    end
+
+    if self.cap.scribble then
+        for _ = 1, self.cap.scribble do
+            local x1, x2 = scribble(#captcha_t * 40, 45)
+            self.im:line(x1, 5, x2, 40, fgcolor)
+        end
+    end
+end
+
+
+-- Perhaps it's not the best solution
+-- Writes the generated image to a jpeg file
+function mt.__index:jpeg(outfile, quality)
+    if not self.im then self:generate() end
+    self.im:jpeg(outfile, quality)
+end
+
+
+-- Writes the generated image to a png file
+function mt.__index:png(outfile)
+    if not self.im then self:generate() end
+    self.im:png(outfile)
+end
+
+
+-- Allows to get the image data in PNG format
+function mt.__index:pngStr()
+    if not self.im then self:generate() end
+    return self.im:pngStr()
+end
+
+
+-- Allows to get the image data in JPEG format
+function mt.__index:jpegStr(quality)
+    if not self.im then self:generate() end
+    return self.im:jpegStr(quality)
+end
+
+
+-- Allows to get the image text
+function mt.__index:getStr()
+    return self.cap.string
+end
+
+
+-- Writes the image to a file
+function mt.__index:write(outfile, quality)
+    if self.cap.string == nil then
+        self:generate()
+    end
+    self:jpeg(outfile, quality)
+    -- Compatibility
+    return self:getStr()
+end
+
+return _M
