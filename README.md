@@ -9,8 +9,8 @@ Based on the original [lua-captcha](http://projects.plentyfact.org/projects/lua-
 
 ## Dependencies
 
-* [libgd](https://github.com/libgd/libgd) — GD Graphics library
-* [lua-resty-gd](https://github.com/HanadaLee/lua-resty-gd) — Lua bindings to libgd
+* [libgd](https://github.com/libgd/libgd) - GD Graphics library
+* [lua-resty-gd](https://github.com/HanadaLee/lua-resty-gd) - Lua bindings to libgd
 
 ## Installation
 
@@ -24,9 +24,9 @@ make install
 local captcha = require("resty.captcha")
 local cap = captcha.new()
 
-cap:font("./Vera.ttf")       -- required
-cap:write("out.jpg", 70)     -- write JPEG, quality 70
-print(cap:getStr())          -- get the captcha text
+assert(cap:font("./Vera.ttf"))       -- required
+local text = assert(cap:write("out.jpg", 70))
+print(text)
 ```
 
 More examples in the `examples/` directory.
@@ -34,6 +34,8 @@ More examples in the `examples/` directory.
 ---
 
 ## API Reference
+
+Most mutating and output methods return `true` or the requested data on success, and `nil/false, err` on failure.
 
 ### cap:font(path)
 
@@ -73,7 +75,7 @@ Generate the image. Called automatically by most output methods if needed.
 
 ### cap:write(outfile, quality)
 
-Generate and write a JPEG file. Returns the captcha text. `quality` is 0–100.
+Generate and write a JPEG file. Returns the captcha text. `quality` is 0-100.
 
 ### cap:jpeg(outfile, quality)
 
@@ -104,9 +106,9 @@ Return the captcha text.
 ```lua
 local captcha = require("resty.captcha")
 local cap = captcha.new()
-cap:font("./Vera.ttf")
-cap:write("captcha.jpg", 70)
-print("Captcha: " .. cap:getStr())
+assert(cap:font("./Vera.ttf"))
+local text = assert(cap:write("captcha.jpg", 70))
+print("Captcha: " .. text)
 ```
 
 ### Custom colors and strike-through
@@ -114,12 +116,12 @@ print("Captcha: " .. cap:getStr())
 ```lua
 local captcha = require("resty.captcha")
 local cap = captcha.new()
-cap:font("./Vera.ttf")
-cap:string("hello")
-cap:bgcolor(61, 174, 233)
-cap:fgcolor(49, 54, 59)
-cap:line(true)
-cap:write("captcha.jpg", 70)
+assert(cap:font("./Vera.ttf"))
+assert(cap:string("hello"))
+assert(cap:bgcolor(61, 174, 233))
+assert(cap:fgcolor(49, 54, 59))
+assert(cap:line(true))
+assert(cap:write("captcha.jpg", 70))
 ```
 
 ### Image data for HTTP response
@@ -127,10 +129,10 @@ cap:write("captcha.jpg", 70)
 ```lua
 local captcha = require("resty.captcha")
 local cap = captcha.new()
-cap:font("./Vera.ttf")
-cap:generate()
+assert(cap:font("./Vera.ttf"))
+local data = assert(cap:pngStr())
 ngx.header["Content-Type"] = "image/png"
-ngx.say(cap:pngStr())
+ngx.print(data)
 ```
 
 ### Scribble lines
@@ -138,20 +140,20 @@ ngx.say(cap:pngStr())
 ```lua
 local captcha = require("resty.captcha")
 local cap = captcha.new()
-cap:font("./Vera.ttf")
-cap:scribble(30)
-cap:write("captcha.jpg", 70)
+assert(cap:font("./Vera.ttf"))
+assert(cap:scribble(30))
+assert(cap:write("captcha.jpg", 70))
 ```
 
 ---
 
 ## Copyright
 
-© 2011 startx <startx@plentyfact.org>
+(C) 2011 startx <startx@plentyfact.org>
 
-© 2014-2015 mrDoctorWho <mrdoctorwho@gmail.com>
+(C) 2014-2015 mrDoctorWho <mrdoctorwho@gmail.com>
 
-© Hanada <im@hanada.info>
+(C) Hanada <im@hanada.info>
 
 ## License
 
