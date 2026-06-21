@@ -18,7 +18,7 @@ description = {
 
 dependencies = {
     "lua >= 5.1",
-    "lua-resty-gd",
+    "lua-resty-gd >= 2.3.3.3",
 }
 
 build = {

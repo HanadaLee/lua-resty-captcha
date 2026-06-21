@@ -474,18 +474,11 @@ function mt.__index:generate()
             return nil, err
         end
 
-        local llx, lly, lrx, lry, urx, ury, ulx, uly =
-            im:stringFT(fgcolor, font, TEXT_SIZE, rad(angle),
-                        offset_left, 35, captcha_t[i])
+        local llx, draw_err = im:stringFT(fgcolor, font, TEXT_SIZE, rad(angle),
+                                          offset_left, 35, captcha_t[i])
         if not llx then
             gd.destroy(im)
-            return nil, "failed to draw captcha text: " .. tostring(lly)
-        end
-
-        ok, err = im:polygon({ { llx, lly }, { lrx, lry }, { urx, ury }, { ulx, uly } }, bgcolor)
-        if not ok then
-            gd.destroy(im)
-            return nil, err
+            return nil, "failed to draw captcha text: " .. tostring(draw_err)
         end
 
         offset_left = offset_left + CHAR_WIDTH
