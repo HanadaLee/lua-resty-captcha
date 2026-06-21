@@ -1,9 +1,9 @@
 package = "lua-resty-captcha"
-version = "1.0.1-1"
+version = "1.0.2-1"
 
 source = {
     url = "git://github.com/HanadaLee/lua-resty-captcha.git",
-    tag = "1.0.1",
+    tag = "1.0.2",
 }
 
 description = {
@@ -18,7 +18,7 @@ description = {
 
 dependencies = {
     "lua >= 5.1",
-    "lua-resty-gd >= 2.3.3.3",
+    "lua-resty-gd >= 2.3.3.4",
 }
 
 build = {
